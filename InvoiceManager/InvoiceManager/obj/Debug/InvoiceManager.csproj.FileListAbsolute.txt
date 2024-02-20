@@ -1,0 +1,15 @@
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\bin\Debug\InvoiceManager.exe.config
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\bin\Debug\InvoiceManager.exe
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\bin\Debug\InvoiceManager.pdb
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.csproj.AssemblyReference.cache
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.Form1.resources
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.Properties.Resources.resources
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.csproj.GenerateResource.cache
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.csproj.CoreCompileInputs.cache
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.exe
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.pdb
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.app.resources
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.AddProduct.resources
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.ADDClient.resources
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.ADDInvoice.resources
+C:\Users\larin\source\repos\InvoiceManager\InvoiceManager\obj\Debug\InvoiceManager.ADDInvoiceDetail.resources
