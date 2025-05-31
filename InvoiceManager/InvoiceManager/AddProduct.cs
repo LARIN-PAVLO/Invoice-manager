@@ -24,18 +24,27 @@ namespace InvoiceManager
         {
             nameBread.Text = "";
             priceBread.Text = "";
+            textBox1.Text = "";
         }
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
+            if (nameBread.Text == "" || textBox1.Text == "" || priceBread.Text == "")
+            {
+                MessageBox.Show("Будь ласка, заповніть всі поля.", "Попередження", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             dataBase.openConnection();
 
             string name = nameBread.Text;
-            int price;
+            string unit_of_measurement = textBox1.Text;
+            decimal price;
 
-            if (int.TryParse(priceBread.Text, out price))
+            if (decimal.TryParse(priceBread.Text, out price))
             {
-                string add = $"insert into product (product_name, price) values ('{name}', '{price}')";
+                string decimalSTR = price.ToString().Replace(",", ".");
+                string add = $"insert into product (product_name, price, unit_of_measurement) values ('{name}', '{decimalSTR}', '{unit_of_measurement}')";
                 SqlCommand command = new SqlCommand(add, dataBase.getConnection());
                 command.ExecuteNonQuery();
 

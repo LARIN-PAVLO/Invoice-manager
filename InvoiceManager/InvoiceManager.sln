@@ -5,6 +5,8 @@ VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvoiceManager", "InvoiceManager\InvoiceManager.csproj", "{EE8341A3-1592-4520-9AA5-4A557195F08A}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "InvoiceManagerInstaller", "InvoiceManagerInstaller\InvoiceManagerInstaller.vdproj", "{447350EC-3419-4480-BD31-0C9F3A1FAFC2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,8 @@ Global
 		{EE8341A3-1592-4520-9AA5-4A557195F08A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE8341A3-1592-4520-9AA5-4A557195F08A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE8341A3-1592-4520-9AA5-4A557195F08A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{447350EC-3419-4480-BD31-0C9F3A1FAFC2}.Debug|Any CPU.ActiveCfg = Debug
+		{447350EC-3419-4480-BD31-0C9F3A1FAFC2}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

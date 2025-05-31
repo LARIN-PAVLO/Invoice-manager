@@ -48,14 +48,19 @@ namespace InvoiceManager
 
         private void ReadSingleRow(DataGridView dgw, IDataRecord record)
         {
-            dgw.Rows.Add(record.GetInt32(0), record.GetInt32(1), record.GetString(2), record.GetInt32(3), record.GetInt32(4), RowState.ModifiedNew);
+            dgw.Rows.Add(record.GetInt32(0), record.GetInt32(1), record.GetString(2), record.GetDecimal(3), record.GetInt32(4), RowState.ModifiedNew);
         }
 
         private void RefreshDataGrid(DataGridView dgw)
         {
             dgw.Rows.Clear();
-            string querryString = $"select invoiceDetail.id_detail, product.id_product, product.product_name, product.price, invoiceDetail.amount from invoiceDetail join product on invoiceDetail.id_product = product.id_product";
-            SqlCommand command = new SqlCommand(querryString, dataBase.getConnection());
+            string queryString = $"SELECT invoiceDetail.id_detail, product.id_product, product.product_name, product.price, invoiceDetail.amount " +
+                                 $"FROM invoiceDetail " +
+                                 $"JOIN product ON invoiceDetail.id_product = product.id_product " +
+                                 $"WHERE invoiceDetail.id_invoice = @id_invoice"; // Додаємо фільтр за id_invoice
+
+            SqlCommand command = new SqlCommand(queryString, dataBase.getConnection());
+            command.Parameters.AddWithValue("@id_invoice", id_invoice); // Передаємо id_invoice як параметр
 
             dataBase.openConnection();
 
@@ -67,8 +72,9 @@ namespace InvoiceManager
             }
 
             reader.Close();
-
+            dataBase.closeConnection();
         }
+
 
         private void addSelectClient()
         {
@@ -108,11 +114,6 @@ namespace InvoiceManager
             RefreshDataGrid(dataGridView1);
         }
 
-        private void selectProduct_TextChanged(object sender, EventArgs e)
-        {
-            addSelectClient();
-        }
-
         private void btnADD_Click(object sender, EventArgs e)
         {
             if (amountProduct.Value <= 0)
@@ -120,8 +121,7 @@ namespace InvoiceManager
                 MessageBox.Show("Помилка! Кількість повинна бути більшою 0!", "Помилка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-
-            else if (selectProduct.Text != "")
+            else if (selectProduct.SelectedItem != null && selectProduct.SelectedIndex != -1)
             {
                 try
                 {
@@ -168,7 +168,19 @@ namespace InvoiceManager
                 DataGridViewRow row = dataGridView1.Rows[selectedRow];
 
                 IDDetail.Text = row.Cells[0].Value.ToString();
-                selectProduct.Text = row.Cells[1].Value.ToString() + " " + row.Cells[2].Value.ToString();
+
+                string idToFind = row.Cells[1].Value.ToString();
+
+                for (int i = 0; i < selectProduct.Items.Count; i++)
+                {
+                    string itemText = selectProduct.Items[i].ToString();
+                    if (itemText.StartsWith(idToFind + " "))
+                    {
+                        selectProduct.SelectedIndex = i;
+                        break;
+                    }
+                }
+
                 amountProduct.Text = row.Cells[4].Value.ToString();
             }
 
@@ -209,7 +221,7 @@ namespace InvoiceManager
             reader.Read();
 
             string product = reader.GetString(1);
-            int price = reader.GetInt32(2);
+            decimal price = reader.GetDecimal(2);
 
             reader.Close();
 
@@ -247,6 +259,11 @@ namespace InvoiceManager
                 }
             }
             dataBase.closeConnection();
+        }
+
+        private void selectProduct_KeyUp(object sender, KeyEventArgs e)
+        {
+            addSelectClient();
         }
     }
 }

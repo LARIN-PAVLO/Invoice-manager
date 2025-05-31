@@ -26,10 +26,17 @@ namespace InvoiceManager
             pictureBox3.Visible = false;
             txtBox_login.MaxLength = 50;
             txtBox_password.MaxLength = 50;
+            txtBox_login.Text = "admin";
+            txtBox_password.Text = "admin";
         }
 
         private void btn_Click(object sender, EventArgs e)
         {
+            if (!dataBase.TestConnection())
+            {
+                return;
+            }
+
             string loginManager = txtBox_login.Text;
             string passwordManager = txtBox_password.Text;
 
@@ -68,5 +75,10 @@ namespace InvoiceManager
             pictureBox4.Visible = false;
         }
 
+        private void pictureBox2_Click(object sender, EventArgs e)
+        {
+            ConnectionSettinds connectionSettings = new ConnectionSettinds();
+            connectionSettings.ShowDialog();
+        }
     }
 }

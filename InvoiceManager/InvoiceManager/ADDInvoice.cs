@@ -40,7 +40,27 @@ namespace InvoiceManager
             dataBase.closeConnection();
         }
 
-        private void selectClient_TextChanged(object sender, EventArgs e)
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            selectClient.Text = "";
+        }
+
+        private void btnAdd_Click(object sender, EventArgs e)
+        {
+            dataBase.openConnection();
+
+            string id = selectClient.Text.Substring(0, selectClient.Text.IndexOf(' '));
+
+            var add = $"insert into invoice (id_client, date_dispatch) values ('{id}', '{dateTimePicker1.Value.ToString("yyyy-MM-dd")}')";
+            var command = new SqlCommand(add, dataBase.getConnection());
+            command.ExecuteNonQuery();
+
+            MessageBox.Show("Накладну створено!", "Виконано!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            dataBase.closeConnection();
+        }
+
+        private void selectClient_KeyUp(object sender, KeyEventArgs e)
         {
             if (selectClient.SelectedText.Length == 0)
             {
@@ -63,26 +83,6 @@ namespace InvoiceManager
                 reader.Close();
                 dataBase.closeConnection();
             }
-        }
-
-        private void btnClear_Click(object sender, EventArgs e)
-        {
-            selectClient.Text = "";
-        }
-
-        private void btnAdd_Click(object sender, EventArgs e)
-        {
-            dataBase.openConnection();
-
-            string id = selectClient.Text.Substring(0, selectClient.Text.IndexOf(' '));
-
-            var add = $"insert into invoice (id_client, date_dispatch) values ('{id}', '{dateTimePicker1.Value.ToString("yyyy-MM-dd")}')";
-            var command = new SqlCommand(add, dataBase.getConnection());
-            command.ExecuteNonQuery();
-
-            MessageBox.Show("Накладну створено!", "Виконано!", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-            dataBase.closeConnection();
         }
     }
 }

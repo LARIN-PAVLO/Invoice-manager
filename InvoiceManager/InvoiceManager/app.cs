@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
 using System.Collections;
+using InvoiceManager.Properties;
+using System.Globalization;
+using System.IO;
 
 namespace InvoiceManager
 {
@@ -51,6 +54,7 @@ namespace InvoiceManager
                     dataGridView1.Columns.Add("id", "ID");
                     dataGridView1.Columns.Add("name", "Назва товару");
                     dataGridView1.Columns.Add("Price", "Ціна");
+                    dataGridView1.Columns.Add("unit_of_measurement", "Одиниці");
                     dataGridView1.Columns.Add("IsNew", String.Empty);
                     break;
                 case "invoice":
@@ -76,7 +80,7 @@ namespace InvoiceManager
                     dgw.Rows.Add(record.GetInt32(0), record.GetString(1), record.GetString(2), record.GetString(3), record.GetString(4), record.GetString(5), RowState.ModifiedNew);
                     break;
                 case "product":
-                    dgw.Rows.Add(record.GetInt32(0), record.GetString(1), record.GetInt32(2), RowState.ModifiedNew);
+                    dgw.Rows.Add(record.GetInt32(0), record.GetString(1), record.GetDecimal(2), record.GetString(3), RowState.ModifiedNew);
                     break;
                 case "invoice":
                     dgw.Rows.Add(record.GetInt32(0), record.GetInt32(1), record.GetString(2), record.GetString(3), record.GetString(4), record.GetString(5),  record.GetDateTime(6).ToShortDateString(), RowState.ModifiedNew);
@@ -138,6 +142,7 @@ namespace InvoiceManager
                         IDbread.Text = row.Cells[0].Value.ToString();
                         nameBread.Text = row.Cells[1].Value.ToString();
                         priceBread.Text = row.Cells[2].Value.ToString();
+                        textBox1.Text = row.Cells[3].Value.ToString();
                         break;
                     case "invoice":
                         txtIDInvoice.Text = row.Cells[0].Value.ToString();
@@ -156,7 +161,7 @@ namespace InvoiceManager
         private void button1_Click(object sender, EventArgs e)
         {
             AddProduct addProduct = new AddProduct();
-            addProduct.Show();
+            addProduct.ShowDialog();
         }
 
         private void Search(DataGridView dgw)
@@ -171,7 +176,7 @@ namespace InvoiceManager
                     
                     break;
                 case "product":
-                    searchString = $"select * from product where concat (id_product,' ' ,product_name,' ' , price) like '%" + txt_search.Text + "%'";
+                    searchString = $"select * from product where concat (id_product,' ' ,product_name,' ' , price,' ' ,unit_of_measurement) like '%" + txt_search.Text + "%'";
 
                     break;
                 case "invoice":
@@ -200,6 +205,9 @@ namespace InvoiceManager
 
         private void deleteRow()
         {
+            if (dataGridView1.CurrentCell == null)
+                return; // Без вибраної клітинки — вихід
+
             int index = dataGridView1.CurrentCell.RowIndex;
 
             dataGridView1.Rows[index].Visible = false;
@@ -275,9 +283,10 @@ namespace InvoiceManager
                             break;
                         case "product":
                             string name = dataGridView1.Rows[i].Cells[1].Value.ToString();
-                            string price = dataGridView1.Rows[i].Cells[2].Value.ToString();
+                            string price = dataGridView1.Rows[i].Cells[2].Value.ToString()?.Replace(",", ".");
+                            string unit_of_measurement = dataGridView1.Rows[i].Cells[1].Value.ToString();
 
-                            change = $"update product set product_name = '{name}', price = '{price}' where id_product = '{id}'";
+                            change = $"update product set product_name = '{name}', price = '{price}', unit_of_measurement = '{unit_of_measurement}' where id_product = '{id}'";
                             break;
                         case "invoice":
                             string idClient = dataGridView1.Rows[i].Cells[1].Value.ToString();
@@ -301,6 +310,9 @@ namespace InvoiceManager
 
         private void Chage()
         {
+            if (dataGridView1.CurrentCell == null)
+                return; // Без вибраної клітинки — вихід
+
             int selectedIndex = dataGridView1.CurrentCell.RowIndex;
             switch (frmvisible)
             {
@@ -318,13 +330,14 @@ namespace InvoiceManager
                 case "product":
                     string id = IDbread.Text;
                     string name = nameBread.Text;
-                    int price;
+                    string unit_of_measurement = textBox1.Text;
+                    decimal price;
 
                     if (dataGridView1.Rows[selectedIndex].Cells[0].Value.ToString() != string.Empty)
                     {
-                        if (int.TryParse(priceBread.Text, out price))
+                        if (decimal.TryParse(priceBread.Text, out price))
                         {
-                            dataGridView1.Rows[selectedIndex].SetValues(id, name, price);
+                            dataGridView1.Rows[selectedIndex].SetValues(id, name, price, unit_of_measurement);
                             dataGridView1.Rows[selectedIndex].Cells[3].Value = RowState.Modified;
                         }
                         else
@@ -397,7 +410,7 @@ namespace InvoiceManager
         private void btnCreateClient_Click(object sender, EventArgs e)
         {
             ADDClient aDDClient = new ADDClient();
-            aDDClient.Show();
+            aDDClient.ShowDialog();
         }
 
         private void toolInvoice_Click(object sender, EventArgs e)
@@ -417,7 +430,7 @@ namespace InvoiceManager
         private void toolCreate_Click(object sender, EventArgs e)
         {
             ADDInvoice aDDInvoice = new ADDInvoice();
-            aDDInvoice.Show();
+            aDDInvoice.ShowDialog();
         }
 
         private void addSelectClient()
@@ -445,18 +458,470 @@ namespace InvoiceManager
             }
         }
 
-        private void selectClient_TextChanged(object sender, EventArgs e)
-        {
-            addSelectClient();
-        }
 
         private void dataGridView1_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             if(frmvisible == "invoice")
             {
                 ADDInvoiceDetail aDDInvoiceDetail = new ADDInvoiceDetail(Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString()));
-                aDDInvoiceDetail.Show();
+                aDDInvoiceDetail.ShowDialog();
             }
+        }
+
+        private void pictureBox4_Click(object sender, EventArgs e)
+        {
+            Settings settings = new Settings();
+            settings.ShowDialog();
+        }
+
+        private void selectClient_KeyUp(object sender, KeyEventArgs e)
+        {
+            addSelectClient();
+        }
+
+        private void button10_Click(object sender, EventArgs e)
+        {
+            if (dataGridView1.CurrentCell == null)
+            {
+                MessageBox.Show("Клієнта не обрано!", "Попередження", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int rowIndex = dataGridView1.CurrentCell.RowIndex;
+            int invoiceId = Convert.ToInt32(dataGridView1.Rows[rowIndex].Cells[0].Value);
+
+            // Створення екземпляра класу WordRender
+            string sourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "invoice.docx");
+            string tempPath = Path.Combine(Path.GetTempPath(), "invoice_temp.docx");
+            File.Copy(sourcePath, tempPath, true);
+            WordRender render = new WordRender(tempPath);
+
+            string contractDateLong = "24.05.2025";
+            string contractDate = GetContractDate(invoiceId);
+
+            if (!string.IsNullOrEmpty(contractDate) && DateTime.TryParseExact(contractDate, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out DateTime date))
+            {
+                // Форматуємо дату як "dd MMMM yyyy" (наприклад: 01 квітня 2025)
+                contractDateLong = date.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("uk-UA"));
+            }
+
+            // Створення словника для заміни маркерів
+            var items = new Dictionary<string, string>
+            {
+                {"<Organization>", getOrganizationInfo().Replace(Environment.NewLine, "^p")},
+                {"<Client>", getClientInfo(invoiceId).Replace(Environment.NewLine, "^p")},
+                {"<ContractNumber>", GetContractNumber(invoiceId)},
+                {"<ContractDate>", contractDate},
+                {"<ContractDateLong>", contractDateLong},
+                {"<Number>", invoiceId.ToString()},
+                {"<Date>", GetInvoiceDate(invoiceId).ToString("dd MMMM yyyy")},
+                {"<TotalWithoutVAT>", GetInvoiceTotal(invoiceId).ToString("0.00")},
+                {"<VATAmount>", GetVATAmount(invoiceId).ToString("0.00")},
+                {"<TotalWithVAT>", (GetInvoiceTotal(invoiceId) + GetVATAmount(invoiceId)).ToString("0.00")},
+                {"<Sum>", ConvertToWords(GetInvoiceTotal(invoiceId) + GetVATAmount(invoiceId))},
+                {"<VAT>", ConvertToWords(GetVATAmount(invoiceId))}
+            };
+
+            // Створення списку продуктів для таблиці
+            var products = GetProductList(invoiceId);
+
+            // Кількість різних товарів у накладній (по суті — кількість рядків у таблиці)
+            int realProductCount = products.Count(p =>
+                !string.IsNullOrWhiteSpace(p["<NameProduct>"]) &&
+                !string.IsNullOrWhiteSpace(p["<Amount>"]) &&
+                !string.IsNullOrWhiteSpace(p["<UnitName>"]) &&
+                !string.IsNullOrWhiteSpace(p["<UnitPrice>"]) &&
+                !string.IsNullOrWhiteSpace(p["<SumProdact>"])
+            );
+
+            items["<AmountUnits>"] = realProductCount.ToString();
+
+
+            // Викликаємо метод для обробки документа
+            render.Process(items, products);
+        }
+
+        private string getOrganizationInfo()
+        {
+            // Формуємо SQL-запит для отримання даних про компанію
+            string searchString = @"SELECT TOP (1) 
+                                [name], 
+                                [zip_code], 
+                                [city], 
+                                [street], 
+                                [building_number], 
+                                [phone], 
+                                [account], 
+                                [bank], 
+                                [bank_city]
+                            FROM [invoiceManager].[dbo].[сompanyInfo]";
+
+            // Виконання SQL-запиту
+            SqlCommand com = new SqlCommand(searchString, dataBase.getConnection());
+            dataBase.openConnection();
+            SqlDataReader reader = com.ExecuteReader();
+
+            // Перевірка, чи є результат
+            string nl = Environment.NewLine;
+            string organizationInfo = string.Empty;
+            if (reader.Read())
+            {
+                organizationInfo = $"{reader["name"]},{nl}" +
+                                   $"{reader["zip_code"]}, " +
+                                   $"м. {reader["city"]}, " +
+                                   $"вул. {reader["street"]}, " +
+                                   $"{reader["building_number"]}, " +
+                                   $"тел. {reader["phone"]},{nl}" +
+                                   $"р/р {reader["account"]} " +
+                                   $"у банку {reader["bank"]}, " +
+                                   $"м. {reader["bank_city"]}";
+            }
+
+
+            // Закриваємо рідер та з'єднання
+            reader.Close();
+            dataBase.closeConnection();
+
+            // Повертаємо сформований рядок
+            return organizationInfo;
+        }
+
+        private decimal GetInvoiceTotal(int invoiceId)
+        {
+            string query = "SELECT total_amount FROM [invoiceManager].[dbo].[invoice] WHERE id_invoice = @invoiceId";
+            using (SqlCommand cmd = new SqlCommand(query, dataBase.getConnection()))
+            {
+                cmd.Parameters.AddWithValue("@invoiceId", invoiceId);
+
+                dataBase.openConnection();
+                object result = cmd.ExecuteScalar();
+                dataBase.closeConnection();
+
+                if (result == null || result == DBNull.Value)
+                    return 0;
+
+                return Convert.ToDecimal(result);
+            }
+        }
+
+        private string ConvertToWords(decimal amount)
+        {
+            if (amount == 0)
+                return "Нуль гривень 00 копійок";
+
+            int integerPart = (int)amount;
+            int fractionalPart = (int)((amount - integerPart) * 100);
+
+            string words = ConvertIntegerToWords(integerPart) + " гривень ";
+
+            if (fractionalPart > 0)
+            {
+                words += ConvertIntegerToWords(fractionalPart) + " копійок";
+            }
+            else
+            {
+                words += "00 копійок";
+            }
+
+            return words.Trim();
+        }
+
+        private string ConvertIntegerToWords(int number)
+        {
+            if (number == 0)
+                return "";
+
+            string[] ones = new string[] { "", "одна", "два", "три", "чотири", "п'ять", "шість", "сім", "вісім", "дев'ять" };
+            string[] teens = new string[] { "десять", "одинадцять", "дванадцять", "тринадцять", "чотирнадцять", "п'ятнадцять", "шістнадцять", "сімнадцять", "вісімнадцять", "дев'ятнадцять" };
+            string[] tens = new string[] { "", "", "двадцять", "тридцять", "сорок", "п'ятдесят", "шістдесят", "сімдесят", "вісімдесят", "дев'яносто" };
+            string[] hundreds = new string[] { "", "сто", "двісті", "триста", "чотириста", "п'ятсот", "шістсот", "сімсот", "вісімсот", "дев'ятсот" };
+            string[] thousands = new string[] { "", "тисяча", "дві тисячі", "три тисячі", "чотири тисячі", "п'ять тисяч", "шість тисяч", "сім тисяч", "вісім тисяч", "дев'ять тисяч" };
+
+            string words = "";
+
+            if (number >= 1000)
+            {
+                words += thousands[number / 1000] + " ";
+                number %= 1000;
+            }
+
+            if (number >= 100)
+            {
+                words += hundreds[number / 100] + " ";
+                number %= 100;
+            }
+
+            if (number >= 20)
+            {
+                words += tens[number / 10] + " ";
+                number %= 10;
+            }
+
+            if (number >= 10)
+            {
+                words += teens[number - 10] + " ";
+                number = 0;
+            }
+
+            if (number > 0)
+            {
+                words += ones[number] + " ";
+            }
+
+            return words.Trim();
+        }
+
+
+        private DateTime GetInvoiceDate(int invoiceId)
+        {
+            DateTime invoiceDate = DateTime.MinValue;
+
+            string query = "SELECT date_dispatch FROM [invoiceManager].[dbo].[invoice] WHERE id_invoice = @invoiceId";
+            using (SqlCommand cmd = new SqlCommand(query, dataBase.getConnection()))
+            {
+                cmd.Parameters.AddWithValue("@invoiceId", invoiceId);
+
+                dataBase.openConnection();
+                invoiceDate = Convert.ToDateTime(cmd.ExecuteScalar());
+                dataBase.closeConnection();
+            }
+
+            return invoiceDate;
+        }
+
+        private decimal GetVATAmount(int invoiceId)
+        {
+            string query = "SELECT vat_amount FROM [invoiceManager].[dbo].[invoice] WHERE id_invoice = @invoiceId";
+            using (SqlCommand cmd = new SqlCommand(query, dataBase.getConnection()))
+            {
+                cmd.Parameters.AddWithValue("@invoiceId", invoiceId);
+
+                dataBase.openConnection();
+                object result = cmd.ExecuteScalar();
+                dataBase.closeConnection();
+
+                if (result == null || result == DBNull.Value)
+                    return 0;
+
+                return Convert.ToDecimal(result);
+            }
+        }
+
+
+        private string getClientInfo(int invoiceId)
+        {
+            // Отримуємо id_client з таблиці invoice за допомогою invoiceId
+            string clientId = string.Empty; // Змінна для зберігання clientId
+            string searchClientIdQuery = @"SELECT id_client 
+                                   FROM [invoiceManager].[dbo].[invoice] 
+                                   WHERE id_invoice = @invoiceId";
+
+            SqlCommand clientIdCommand = new SqlCommand(searchClientIdQuery, dataBase.getConnection());
+            clientIdCommand.Parameters.AddWithValue("@invoiceId", invoiceId);
+
+            dataBase.openConnection();
+            SqlDataReader clientIdReader = clientIdCommand.ExecuteReader();
+
+            if (clientIdReader.Read())
+            {
+                clientId = clientIdReader["id_client"].ToString(); // Отримуємо id_client
+            }
+
+            clientIdReader.Close();
+
+            // Якщо clientId знайдений, то шукаємо інформацію про клієнта
+            if (!string.IsNullOrEmpty(clientId))
+            {
+                string searchString = @"SELECT
+                                [company_name], 
+                                [zip_code], 
+                                [city], 
+                                [street], 
+                                [building_number],
+                                [phone], 
+                                [account], 
+                                [bank], 
+                                [bank_city]
+                            FROM [invoiceManager].[dbo].[client] 
+                            WHERE id_client = @clientId";
+
+                SqlCommand com = new SqlCommand(searchString, dataBase.getConnection());
+                com.Parameters.AddWithValue("@clientId", clientId); // Передаємо id клієнта
+
+                SqlDataReader reader = com.ExecuteReader();
+                string nl = Environment.NewLine;
+                string clientInfo = string.Empty;
+
+                if (reader.Read())
+                {
+                    clientInfo = $"{reader["company_name"]},{nl}" +
+                                 $"{reader["zip_code"]}, " +
+                                 $"м. {reader["city"]}, " +
+                                 $"вул. {reader["street"]}, " +
+                                 $"{reader["building_number"]}, " +
+                                 $"тел. {reader["phone"]},{nl}" +
+                                 $"р/р {reader["account"]} " +
+                                 $"у банку {reader["bank"]}, " +
+                                 $"м. {reader["bank_city"]}";
+                }
+
+                reader.Close();
+                dataBase.closeConnection();
+
+                return clientInfo;
+            }
+            else
+            {
+                // Якщо id_client не знайдений
+                dataBase.closeConnection();
+                return "Клієнт не знайдений.";
+            }
+        }
+
+        private string GetContractNumber(int invoiceId)
+        {
+            string contractNumber = string.Empty;
+
+            string query = @"
+    SELECT c.contract_number
+    FROM [invoiceManager].[dbo].[contract] c
+    JOIN [invoiceManager].[dbo].[client] cl ON c.id_contract = cl.id_contract
+    JOIN [invoiceManager].[dbo].[invoice] i ON cl.id_client = i.id_client
+    WHERE i.id_invoice = @invoiceId";
+
+            using (SqlCommand cmd = new SqlCommand(query, dataBase.getConnection()))
+            {
+                cmd.Parameters.AddWithValue("@invoiceId", invoiceId);
+
+                dataBase.openConnection();
+
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        contractNumber = reader["contract_number"].ToString();
+                    }
+                }
+
+                dataBase.closeConnection();
+            }
+
+            return contractNumber;
+        }
+
+        private string GetContractDate(int invoiceId)
+        {
+            string contractDate = string.Empty;
+
+            string query = @"
+    SELECT c.contract_date
+    FROM [invoiceManager].[dbo].[contract] c
+    JOIN [invoiceManager].[dbo].[client] cl ON c.id_contract = cl.id_contract
+    JOIN [invoiceManager].[dbo].[invoice] i ON cl.id_client = i.id_client
+    WHERE i.id_invoice = @invoiceId";
+
+            using (SqlCommand cmd = new SqlCommand(query, dataBase.getConnection()))
+            {
+                cmd.Parameters.AddWithValue("@invoiceId", invoiceId);
+
+                dataBase.openConnection();
+
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        // Форматуємо дату як "dd.MM.yyyy"
+                        contractDate = reader["contract_date"] != DBNull.Value
+                            ? Convert.ToDateTime(reader["contract_date"]).ToString("dd.MM.yyyy", new CultureInfo("uk-UA"))
+                            : "Дата не вказана";
+                    }
+                }
+
+                dataBase.closeConnection();
+            }
+
+            return contractDate;
+        }
+
+
+
+        private List<Dictionary<string, string>> GetProductList(int invoiceId)
+        {
+            var productList = new List<Dictionary<string, string>>();
+            bool hasRows = false;
+
+            string query = @"
+        SELECT p.product_name, d.amount, p.price, p.unit_of_measurement
+        FROM invoiceDetail d
+        JOIN product p ON d.id_product = p.id_product
+        WHERE d.id_invoice = @invoiceId";
+
+            using (SqlCommand cmd = new SqlCommand(query, dataBase.getConnection()))
+            {
+                cmd.Parameters.AddWithValue("@invoiceId", invoiceId);
+
+                dataBase.openConnection();
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        hasRows = true;
+
+                        string name = reader["product_name"]?.ToString() ?? "";
+                        string unit = reader["unit_of_measurement"]?.ToString() ?? "";
+
+                        int amount = reader["amount"] != DBNull.Value ? Convert.ToInt32(reader["amount"]) : 0;
+                        decimal price = reader["price"] != DBNull.Value ? Convert.ToDecimal(reader["price"]) : 0;
+                        decimal sum = amount * price;
+
+                        productList.Add(new Dictionary<string, string>
+                {
+                    {"<NameProduct>", name},
+                    {"<Amount>", amount == 0 ? "" : amount.ToString()},
+                    {"<UnitName>", unit},
+                    {"<UnitPrice>", price == 0 ? "" : price.ToString("0.00")},
+                    {"<SumProdact>", sum == 0 ? "" : sum.ToString("0.00")}
+                });
+                    }
+                }
+                dataBase.closeConnection();
+            }
+
+            // Якщо немає жодного товару – додати порожній запис
+            if (!hasRows)
+            {
+                productList.Add(new Dictionary<string, string>
+        {
+            {"<NameProduct>", ""},
+            {"<Amount>", ""},
+            {"<UnitName>", ""},
+            {"<UnitPrice>", ""},
+            {"<SumProdact>", ""}
+        });
+            }
+
+            return productList;
+        }
+
+        private void button11_Click(object sender, EventArgs e)
+        {
+            if (dataGridView1.CurrentCell == null)
+            {
+                MessageBox.Show("Клієнта не обрано!", "Попередження", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int rowIndex = dataGridView1.CurrentCell.RowIndex;
+            int clientId = Convert.ToInt32(dataGridView1.Rows[rowIndex].Cells[0].Value);
+
+            ClientDetails clientDetails = new ClientDetails(clientId);
+            clientDetails.ShowDialog();
+        }
+
+        private void ContractsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Contracts contracts = new Contracts();
+            contracts.ShowDialog();
         }
     }
 }
